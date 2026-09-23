@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    image: track-audit:latest
+    environment:
+      PORT: "8080"
+    ports:
+      # Host-side port is configurable via HOST_PORT (default 8080).
+      - "${HOST_PORT:-8080}:8080"
+
+  # One-shot verification gate: build check, unit tests and API/HTTP smoke
+  # tests (nested-tie, cheap-crossing-decoy, empty-candidate, illegal
+  # reference). Exits 0 on success, non-zero on failure.
+  verify:
+    image: track-audit:latest
+    build: .
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      AUDIT_BASE_URL: "http://api:8080"
+    command: ["python", "scripts/verify.py"]
+    restart: "no"
